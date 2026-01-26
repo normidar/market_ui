@@ -1,5 +1,6 @@
 ---
 dependencies:
+  finance_kline_core: ^0.0.4
   flutter:
     sdk: flutter
 description: A Flutter package template.
