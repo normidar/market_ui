@@ -62,11 +62,12 @@ void drawCandlesticks({
     );
 
     // ウィック（高値-低値の線）を描画
-    // wickPaint.color = isUp ? upPaint.color : downPaint.color; // Using separate wick color as per original design, or stick to reference? 
+    // Using separate wick color as per original design, or stick to reference?
     // Reference uses colored wicks. MarketUI originally used grey wicks.
-    // Let's use the passed wickColor for now to match original MarketUI, but can update if needed.
-    // Actually, reference code does: `wickPaint.color = isUp ? upPaint.color : downPaint.color;`
-    // I will stick to the parameters passed (wickColor) to keep flexibility, allowing user to set it to same as candles if they want.
+    // Let's use the passed wickColor for now to match original MarketUI.
+    // Actually, reference code does:
+    // `wickPaint.color = isUp ? upPaint.color : downPaint.color;`
+    // I will stick to the parameters passed (wickColor) to keep flexibility.
     
     canvas.drawLine(
       Offset(x, highY),
