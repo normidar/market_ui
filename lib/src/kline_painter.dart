@@ -1,5 +1,9 @@
 import 'package:finance_kline_core/finance_kline_core.dart';
 import 'package:flutter/material.dart';
+import 'package:market_ui/src/drawer/kline_drawer.dart';
+import 'package:market_ui/src/types/bollinger_bands_result.dart';
+import 'package:market_ui/src/types/ema_properties.dart';
+import 'package:market_ui/src/types/sign_symbol.dart';
 
 class KlinePainter extends CustomPainter {
   final List<Kline> data;
@@ -8,6 +12,9 @@ class KlinePainter extends CustomPainter {
   final Color upColor;
   final Color downColor;
   final Color wickColor;
+  final List<BollingerBandsResult?>? bollingerBandsResults;
+  final List<EMAProperties> emaPeriods;
+  final List<List<SignSymbol>?>? signSymbols;
 
   KlinePainter({
     required this.data,
@@ -16,82 +23,28 @@ class KlinePainter extends CustomPainter {
     this.upColor = Colors.green,
     this.downColor = Colors.red,
     this.wickColor = Colors.grey,
+    this.bollingerBandsResults,
+    this.emaPeriods = const [],
+    this.signSymbols,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (data.isEmpty) return;
 
-    final maxPrice = data
-        .map((e) => e.high.toDouble())
-        .reduce((a, b) => a > b ? a : b);
-    final minPrice = data
-        .map((e) => e.low.toDouble())
-        .reduce((a, b) => a < b ? a : b);
-    final priceRange = maxPrice - minPrice;
-    
-    // Avoid division by zero
-    final range = priceRange == 0 ? 1.0 : priceRange;
-
-    final height = size.height;
-    
-    // Helper to convert price to y-coordinate
-    double priceToY(double price) {
-      return height - ((price - minPrice) / range * height);
-    }
-
-    final paint = Paint()
-      ..style = PaintingStyle.fill;
-
-    final wickPaint = Paint()
-      ..color = wickColor
-      ..strokeWidth = 1.0;
-
-    for (var i = 0; i < data.length; i++) {
-      final kline = data[i];
-      final open = kline.open.toDouble();
-      final close = kline.close.toDouble();
-      final high = kline.high.toDouble();
-      final low = kline.low.toDouble();
-
-      final isUp = close >= open;
-      final color = isUp ? upColor : downColor;
-      paint.color = color;
-
-      final x = i * (candleWidth + candleSpacing);
-      
-      // Draw wick
-      final highY = priceToY(high);
-      final lowY = priceToY(low);
-      final centerX = x + candleWidth / 2;
-      
-      canvas.drawLine(
-        Offset(centerX, highY),
-        Offset(centerX, lowY),
-        wickPaint,
-      );
-
-      // Draw body
-      final openY = priceToY(open);
-      final closeY = priceToY(close);
-      
-      // Ensure body has at least some height
-      var bodyTop = isUp ? closeY : openY;
-      var bodyBottom = isUp ? openY : closeY;
-      
-      if ((bodyBottom - bodyTop).abs() < 0.5) {
-        bodyBottom += 0.5;
-        bodyTop -= 0.5;
-      }
-
-      final bodyRect = Rect.fromLTRB(
-        x,
-        bodyTop,
-        x + candleWidth,
-        bodyBottom,
-      );
-      canvas.drawRect(bodyRect, paint);
-    }
+    KlineDrawer.drawKline(
+      klines: data,
+      canvas: canvas,
+      size: size,
+      bollingerBandsResults: bollingerBandsResults,
+      emaPeriods: emaPeriods,
+      signSymbols: signSymbols,
+      upColor: upColor,
+      downColor: downColor,
+      wickColor: wickColor,
+      candleWidth: candleWidth,
+      candleSpacing: candleSpacing,
+    );
   }
 
   @override
@@ -101,6 +54,9 @@ class KlinePainter extends CustomPainter {
         oldDelegate.candleSpacing != candleSpacing ||
         oldDelegate.upColor != upColor ||
         oldDelegate.downColor != downColor ||
-        oldDelegate.wickColor != wickColor;
+        oldDelegate.wickColor != wickColor ||
+        oldDelegate.bollingerBandsResults != bollingerBandsResults ||
+        oldDelegate.emaPeriods != emaPeriods ||
+        oldDelegate.signSymbols != signSymbols;
   }
 }

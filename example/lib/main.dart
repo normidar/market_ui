@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:finance_kline_core/finance_kline_core.dart';
 import 'package:flutter/material.dart';
 import 'package:market_ui/market_ui.dart';
@@ -33,28 +35,29 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late List<Kline> _data;
+  List<BollingerBandsResult?>? _bbData;
+  List<EMAProperties> _emaData = [];
+  List<List<SignSymbol>?>? _signSymbols;
 
   @override
   void initState() {
     super.initState();
     _data = _generateDummyData();
+    _calculateIndicators();
   }
 
   List<Kline> _generateDummyData() {
     final List<Kline> data = [];
-    double currentPrice = 100.0;
-    
-    for (int i = 0; i < 50; i++) {
+    double currentPrice = 10000.0;
+
+    for (int i = 0; i < 100; i++) {
       final double open = currentPrice;
-      // Random movement between -2% and +2%
-      final double movement = (i % 2 == 0 ? 1 : -1) * (i % 5 + 1) * 0.5; 
+      // Random movement
+      final double movement = (Random().nextDouble() - 0.5) * 200;
       final double close = open + movement;
-      
-      double high = open > close ? open : close;
-      double low = open < close ? open : close;
-      
-      high += 1.0;
-      low -= 1.0;
+
+      double high = max(open, close) + Random().nextDouble() * 50;
+      double low = min(open, close) - Random().nextDouble() * 50;
 
       data.add(
         Kline.fromDouble(
@@ -65,40 +68,114 @@ class _MyHomePageState extends State<MyHomePage> {
           scale: 2,
         ),
       );
-      
+
       currentPrice = close;
     }
     return data;
+  }
+
+  void _calculateIndicators() {
+    // EMA
+    final ema20 = _data.ema(period: 20);
+    final ema50 = _data.ema(period: 50);
+
+    // Convert List<double?> to List<double?> (mostly casting effectively)
+    // The library returns List<double?>, so we can use it directly.
+    
+    _emaData = [
+      EMAProperties(
+        emaValues: ema20,
+        color: Colors.amber,
+      ),
+      EMAProperties(
+        emaValues: ema50,
+        color: Colors.blue,
+      ),
+    ];
+
+    // Bollinger Bands (Manual calculation for example)
+    _bbData = _calculateBollingerBands(_data, 20, 2);
+
+    // Sign Symbols (Random)
+    _signSymbols = List.generate(_data.length, (index) {
+      if (index % 10 == 0) {
+        return [
+          SignSymbol(
+            symbol: SignSymbolType.arrow,
+            color: Colors.green,
+            isOnTop: false, // Buy signal below
+          )
+        ];
+      } else if (index % 15 == 0) {
+        return [
+          SignSymbol(
+            symbol: SignSymbolType.arrow,
+            color: Colors.red,
+            isOnTop: true, // Sell signal above
+          )
+        ];
+      }
+      return null;
+    });
+  }
+
+  List<BollingerBandsResult?> _calculateBollingerBands(
+      List<Kline> data, int period, double multiplier) {
+    if (data.length < period) return List.filled(data.length, null);
+
+    final results = <BollingerBandsResult?>[];
+    // Fill initial nulls
+    for (int i = 0; i < period - 1; i++) {
+      results.add(null);
+    }
+
+    for (int i = period - 1; i < data.length; i++) {
+      final subset = data.sublist(i - period + 1, i + 1);
+      final closes = subset.map((e) => e.close.toDouble()).toList();
+      final sma = closes.reduce((a, b) => a + b) / period;
+      
+      double sumSquaredDiff = 0.0;
+      for (final close in closes) {
+        sumSquaredDiff += pow(close - sma, 2);
+      }
+      final stdDev = sqrt(sumSquaredDiff / period);
+
+      final upper = sma + (multiplier * stdDev);
+      final lower = sma - (multiplier * stdDev);
+
+      results.add(BollingerBandsResult(
+        upper: upper,
+        middle: sma,
+        lower: lower,
+      ));
+    }
+    return results;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                height: 300,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: KlineChart(
-                  data: _data,
-                  height: 300,
-                  upColor: Colors.green,
-                  downColor: Colors.red,
-                ),
-              ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Container(
+            height: 400,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
             ),
-          ],
+            child: KlineChart(
+              data: _data,
+              height: 400,
+              candleWidth: 6.0,
+              candleSpacing: 2.0,
+              bollingerBandsResults: _bbData,
+              emaPeriods: _emaData,
+              signSymbols: _signSymbols,
+            ),
+          ),
         ),
       ),
     );

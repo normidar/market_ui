@@ -1,6 +1,9 @@
 import 'package:finance_kline_core/finance_kline_core.dart';
 import 'package:flutter/material.dart';
 import 'package:market_ui/src/kline_painter.dart';
+import 'package:market_ui/src/types/bollinger_bands_result.dart';
+import 'package:market_ui/src/types/ema_properties.dart';
+import 'package:market_ui/src/types/sign_symbol.dart';
 
 class KlineChart extends StatefulWidget {
   final List<Kline> data;
@@ -10,6 +13,9 @@ class KlineChart extends StatefulWidget {
   final Color downColor;
   final Color wickColor;
   final double height;
+  final List<BollingerBandsResult?>? bollingerBandsResults;
+  final List<EMAProperties> emaPeriods;
+  final List<List<SignSymbol>?>? signSymbols;
 
   const KlineChart({
     required this.data,
@@ -20,6 +26,9 @@ class KlineChart extends StatefulWidget {
     this.downColor = Colors.red,
     this.wickColor = Colors.grey,
     this.height = 300,
+    this.bollingerBandsResults,
+    this.emaPeriods = const [],
+    this.signSymbols,
   });
 
   @override
@@ -32,7 +41,7 @@ class _KlineChartState extends State<KlineChart> {
     if (widget.data.isEmpty) {
       return const SizedBox();
     }
-    
+
     final totalWidth =
         widget.data.length * (widget.candleWidth + widget.candleSpacing);
 
@@ -51,6 +60,9 @@ class _KlineChartState extends State<KlineChart> {
             upColor: widget.upColor,
             downColor: widget.downColor,
             wickColor: widget.wickColor,
+            bollingerBandsResults: widget.bollingerBandsResults,
+            emaPeriods: widget.emaPeriods,
+            signSymbols: widget.signSymbols,
           ),
           size: Size(totalWidth, widget.height),
         ),
