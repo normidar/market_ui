@@ -38,6 +38,8 @@ class _MyHomePageState extends State<MyHomePage> {
   List<BollingerBandsResult?>? _bbData;
   List<EMAProperties> _emaData = [];
   List<List<SignSymbol>?>? _signSymbols;
+  List<Macd?> _macdData = [];
+  List<Rsi?> _rsiData = [];
 
   @override
   void initState() {
@@ -81,7 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Convert List<double?> to List<double?> (mostly casting effectively)
     // The library returns List<double?>, so we can use it directly.
-    
+
     _emaData = [
       EMAProperties(
         emaValues: ema20,
@@ -117,6 +119,16 @@ class _MyHomePageState extends State<MyHomePage> {
       }
       return null;
     });
+
+    // MACD
+    _macdData = _data.macd(
+      fastPeriod: 12,
+      slowPeriod: 26,
+      signalPeriod: 9,
+    );
+
+    // RSI
+    _rsiData = _data.rsi(period: 14);
   }
 
   List<BollingerBandsResult?> _calculateBollingerBands(
@@ -133,7 +145,7 @@ class _MyHomePageState extends State<MyHomePage> {
       final subset = data.sublist(i - period + 1, i + 1);
       final closes = subset.map((e) => e.close.toDouble()).toList();
       final sma = closes.reduce((a, b) => a + b) / period;
-      
+
       double sumSquaredDiff = 0.0;
       for (final close in closes) {
         sumSquaredDiff += pow(close - sma, 2);
@@ -158,22 +170,57 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Container(
-            height: 400,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: KlineChart(
-              data: _data,
-              height: 400,
-              candleWidth: 6.0,
-              candleSpacing: 2.0,
-              bollingerBandsResults: _bbData,
-              emaPeriods: _emaData,
-              signSymbols: _signSymbols,
+      body: SingleChildScrollView(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                const Text("Kline Chart with BB, EMA, Signs"),
+                Container(
+                  height: 300,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: KlineChart(
+                    data: _data,
+                    height: 300,
+                    candleWidth: 6.0,
+                    candleSpacing: 2.0,
+                    bollingerBandsResults: _bbData,
+                    emaPeriods: _emaData,
+                    signSymbols: _signSymbols,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text("MACD Chart"),
+                Container(
+                  height: 150,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: MacdChart(
+                    data: _macdData,
+                    height: 150,
+                    barWidth: 6.0,
+                    barSpacing: 2.0,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text("RSI Chart"),
+                Container(
+                  height: 150,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: RsiChart(
+                    data: _rsiData,
+                    height: 150,
+                    barWidth: 6.0,
+                    barSpacing: 2.0,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
