@@ -17,9 +17,9 @@ environment:
 homepage: https://github.com/normidar/market_ui
 name: market_ui
 topics:
-  - a
-  - b
-  - c
-  - d
-  - e
+  - market
+  - ui
+  - kline
+  - chart
+  - financial
 version: 0.0.1
